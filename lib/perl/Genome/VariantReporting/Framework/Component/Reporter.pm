@@ -8,10 +8,27 @@ use List::MoreUtils qw(uniq);
 
 class Genome::VariantReporting::Framework::Component::Reporter {
     is => [
+        'Genome::SoftwareResult::StageableSimple',
         'Genome::VariantReporting::Framework::Component::WithTranslatedInputs',
     ],
     is_abstract => 1,
+    has_input => [
+        input_vcf_lookup => {
+            is_structural => 1,
+            is => 'Text',
+        },
+    ],
+    has_param => [
+        variant_type => {
+            is => 'Text',
+            is_structural => 1,
+            valid_values => ['snvs', 'indels'],
+        },
+    ],
     has_transient_optional => [
+        input_vcf => {
+            is => 'File',
+        },
         filters => {
             is => 'HASH',
             is_structural => 1,
@@ -55,6 +72,22 @@ sub report {
 sub finalize {
     # this gets called after interpretations are given to ->report method
     return;
+}
+
+sub _run {
+    my $self = shift;
+
+    $self->status_message("Reading from: ".$self->input_vcf."\n");
+
+    $self->initialize();
+
+    my $vcf_reader = Genome::File::Vcf::Reader->new($self->input_vcf);
+    while (my $entry = $vcf_reader->next) {
+        $self->process_entry($entry);
+    }
+
+    $self->finalize;
+    return 1;
 }
 
 sub add_filter_object {

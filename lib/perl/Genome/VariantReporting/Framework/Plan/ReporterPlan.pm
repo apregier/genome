@@ -125,7 +125,7 @@ sub requires_annotations {
 sub object {
     my $self = shift;
 
-    my $reporter = $self->SUPER::object(@_);
+    my $reporter = $self->get_class->__define__(%{$self->params});
 
     for my $filter_plan ($self->filter_plans) {
         $reporter->add_filter_object($filter_plan->object(@_));
